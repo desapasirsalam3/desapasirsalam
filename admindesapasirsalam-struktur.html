@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Struktur</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      .dropdown-content {
+        background-color: #edf2f7; /* Background color for dropdown */
+        border: 1px solid #cbd5e0; /* Border color */
+        display: none; /* Initially hidden */
+        position: absolute;
+        z-index: 1000;
+        top: 3rem; /* Adjust this value based on your design */
+        right: 1rem; /* Adjust this value based on your design */
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="bg-gray-800 p-4">
+      <div class="container mx-auto flex justify-between items-center relative">
+        <a class="text-white text-lg font-bold" href="#">ADMIN </a>
+        <div class="hidden lg:flex lg:items-center" id="nav-content">
+          <ul class="flex flex-col lg:flex-row lg:ml-auto">
+            <li class="nav-item">
+              <a
+                class="nav-link text-white px-4 py-2"
+                href="admindesapasirsalam-data.html"
+                >Data</a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link text-white px-4 py-2"
+                href="admindesapasirsalam-struktur.html"
+                >Struktur</a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link text-white px-4 py-2"
+                href="admindesapasirsalam-sejarah.html"
+                >Sejarah</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container mx-auto mt-8">
+      <div class="form-group mb-4">
+        <input
+          type="text"
+          class="form-control block w-full p-2 border border-gray-300 rounded"
+          placeholder="Nama"
+          id="nama"
+        />
+      </div>
+      <!-- <div class="form-group mb-4">
+        <input
+          type="number"
+          class="form-control block w-full p-2 border border-gray-300 rounded"
+          placeholder="Harga"
+          id="harga"
+        />
+      </div> -->
+      <div class="form-group mb-4">
+        <input
+          type="text"
+          class="form-control block w-full p-2 border border-gray-300 rounded"
+          placeholder="Jabatan"
+          id="jabatan"
+        />
+      </div>
+      <div class="form-group mb-4">
+        <input
+          type="file"
+          class="form-control block w-full p-2 border border-gray-300 rounded"
+          placeholder=""
+          id="gambar"
+        />
+      </div>
+      <div class="form-group">
+        <button
+          type="button"
+          id="saveButton"
+          class="bg-green-500 text-white px-4 py-2 rounded"
+          onclick="SaveStruktur()"
+        >
+          Save
+        </button>
+        <button
+          type="button"
+          id="cancelButton"
+          class="bg-red-500 text-white px-4 py-2 rounded hidden"
+          onclick="CancelEdit()"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    <div class="container mx-auto mt-8">
+      <table class="table-auto w-full border-collapse border border-gray-300">
+        <thead>
+          <tr class="bg-gray-800 text-white">
+            <th class="border border-gray-300 px-4 py-2">Nama</th>
+            <th class="border border-gray-300 px-4 py-2">Jabatan</th>
+            <th class="border border-gray-300 px-4 py-2">Foto</th>
+            <th class="border border-gray-300 px-4 py-2">Action</th>
+          </tr>
+        </thead>
+        <tbody id="result">
+          <!-- Dynamic content will be injected here -->
+        </tbody>
+      </table>
+    </div>
+
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script>
+      // document
+      //   .getElementById("nav-toggle")
+      //   .addEventListener("click", function () {
+      //     var dropdownContent = document.getElementById("dropdown-content");
+      //     if (
+      //       dropdownContent.style.display === "none" ||
+      //       dropdownContent.style.display === ""
+      //     ) {
+      //       dropdownContent.style.display = "block";
+      //     } else {
+      //       dropdownContent.style.display = "none";
+      //     }
+      //   });
+
+      let currentUpdateId = null;
+
+      const GetStruktur = async () => {
+        try {
+          const response = await axios.get("http://localhost:3000/struktur");
+          const strukturs = response.data;
+          let bucket = "";
+          strukturs.forEach((struktur, index) => {
+            bucket += `
+                <tr>
+                    <td class="border border-gray-300 px-4 py-2">${struktur.nama}</td>
+                    <td class="border border-gray-300 px-4 py-2">${struktur.jabatan}</td>
+                    <td class="border border-gray-300 px-4 py-2"><img src="${struktur.foto}" alt="${struktur.nama}" class="w-20 h-20 object-cover"></td>
+                    <td class="border border-gray-300 px-4 py-2">
+                        <button type="button" class="bg-yellow-500 text-white px-2 py-1 rounded" onclick="EditData('${struktur.id}')">Edit</button>
+                        <button type="button" class="bg-red-500 text-white px-2 py-1 rounded" onclick="DeleteData('${struktur.id}')">Delete</button>
+                    </td>
+                </tr>`;
+          });
+          document.getElementById("result").innerHTML = bucket;
+        } catch (error) {
+          alert(error.message);
+        }
+      };
+
+      GetStruktur();
+
+      const SaveStruktur = async () => {
+        let nama = document.getElementById("nama").value;
+        let foto = document.getElementById("gambar").files[0];
+        let jabatan = document.getElementById("jabatan").value;
+
+        let reader = new FileReader();
+        reader.readAsDataURL(foto);
+        reader.onloadend = async () => {
+          let base64foto = reader.result;
+
+          const strukturData = {
+            nama: nama,
+            foto: base64foto,
+            jabatan: jabatan,
+          };
+
+          try {
+            const response = await axios.post(
+              "http://localhost:3000/struktur",
+              strukturData
+            );
+            console.log(response);
+            GetProduct();
+          } catch (error) {
+            alert(error.message);
+          }
+        };
+      };
+
+      const DeleteData = async (id) => {
+        if (confirm("Are you sure you want to delete this item?")) {
+          try {
+            const response = await axios.delete(
+              `http://localhost:3000/struktur/${id}`
+            );
+            console.log(response);
+            GetProduct(); // Refresh the list after deletion
+          } catch (error) {
+            alert(error.message);
+          }
+        }
+      };
+
+      const EditData = async (id) => {
+        try {
+          const response = await axios.get(
+            `http://localhost:3000/struktur/${id}`
+          );
+          const data = response.data;
+          document.getElementById("nama").value = data.nama;
+          document.getElementById("jabatan").value = data.jabatan;
+          // For image input, we cannot set the file directly for security reasons, but we should reset the field
+          document.getElementById("gambar").value = "";
+
+          const saveButton = document.getElementById("saveButton");
+          const cancelButton = document.getElementById("cancelButton");
+          saveButton.innerText = "Update";
+          cancelButton.classList.remove("hidden");
+          saveButton.onclick = () => UpdateStruktur(id);
+        } catch (error) {
+          alert(error.message);
+        }
+      };
+
+      const CancelEdit = () => {
+        document.getElementById("nama").value = "";
+        document.getElementById("jabatan").value = "";
+        document.getElementById("gambar").value = ""; // Reset file input
+
+        const saveButton = document.getElementById("saveButton");
+        const cancelButton = document.getElementById("cancelButton");
+        saveButton.innerText = "Save";
+        cancelButton.classList.add("hidden");
+        saveButton.onclick = SaveStruktur;
+      };
+
+      const UpdateStruktur = async (id) => {
+        let nama = document.getElementById("nama").value;
+        let jabatan = document.getElementById("jabatan").value;
+        let foto = document.getElementById("gambar").files[0];
+
+        const updatedData = {
+          nama: nama,
+          jabatan: jabatan,
+        };
+
+        if (foto) {
+          let reader = new FileReader();
+          reader.readAsDataURL(foto);
+          reader.onloadend = async () => {
+            updatedData.foto = reader.result;
+            await sendUpdateRequest(id, updatedData);
+          };
+        } else {
+          await sendUpdateRequest(id, updatedData);
+        }
+      };
+
+      const sendUpdateRequest = async (id, updatedData) => {
+        try {
+          const response = await axios.put(
+            `http://localhost:3000/struktur/${id}`,
+            updatedData
+          );
+          console.log(response);
+          GetStruktur(); // Refresh the list after updating
+          CancelEdit(); // Clear input fields and reset buttons
+        } catch (error) {
+          alert(error.message);
+        }
+      };
+    </script>
+  </body>
+</html>
